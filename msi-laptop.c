@@ -14,21 +14,22 @@ MODULE_VERSION("0.01");
 #define MSIWMI_WIND_EVENT_GUID "5B3CC38A-40D9-7245-8AE6-1145B751BE3F"
 
 // I'm not really sure abput this one
-#define MSI_EC_THRESHOLD_COMMAND 0xef
+#define MSI_EC_THRESHOLD_ADDRESS 0xef
 
 static int charge_threshold_get(void);
 
 static int charge_threshold_get(void)
 {
+	u8 wdata = 0;
 	u8 rdata;
 	int result;
 
 	// rdata always returns 0, the command is probably wrong
-	result = ec_transaction(MSI_EC_THRESHOLD_COMMAND, NULL, 0, &rdata, 1);
+	result = ec_transaction(MSI_EC_THRESHOLD_ADDRESS, &wdata, 1, &rdata, 1);
 	if (!result)
 		return result;
 
-	printk(KERN_INFO "Result: %u\n", rdata);
+	printk(KERN_INFO "Data: %d, Result: %d\n", rdata, result);
 
 	return (int) rdata;
 }
@@ -45,7 +46,9 @@ static int __init msi_laptop_init(void)
 		printk(KERN_INFO "Has MSIWMI_WIND_EVENT_GUID!\n");
 
 		printk(KERN_INFO "Read ec charge threshold\n");
-		charge_threshold_get();
+		if (!charge_threshold_get()) {
+			printk(KERN_INFO "Error trying to read from ec\n");
+		}
 	}
 
 	return 0;
