@@ -13,25 +13,42 @@ MODULE_VERSION("0.01");
 #define MSIWMI_MSI_EVENT_GUID "B6F3EEF2-3D2F-49DC-9DE3-85BCE18C62F2"
 #define MSIWMI_WIND_EVENT_GUID "5B3CC38A-40D9-7245-8AE6-1145B751BE3F"
 
-// I'm not really sure abput this one
 #define MSI_EC_THRESHOLD_ADDRESS 0xef
 
 static int charge_threshold_get(void);
+static int charge_threshold_set(int end);
 
 static int charge_threshold_get(void)
 {
-	u8 wdata = 0;
-	u8 rdata;
-	int result;
+	int err;
+	u8 val;
 
-	// rdata always returns 0, the command is probably wrong
-	result = ec_transaction(MSI_EC_THRESHOLD_ADDRESS, &wdata, 1, &rdata, 1);
-	if (!result)
-		return result;
+	err = ec_read(MSI_EC_THRESHOLD_ADDRESS, &val);
 
-	printk(KERN_INFO "Data: %d, Result: %d\n", rdata, result);
+	if (!err)
+		return (int) val;
 
-	return (int) rdata;
+	return err;
+}
+
+/*
+ * Accepeted values are
+ * 0 - 60%
+ * 1 - 80%
+ * 2 - 100%
+ */
+static int charge_threshold_set(int end)
+{
+	int err;
+	u8 val;
+
+	if (end < 0 || end > 2)
+		return -EINVAL;
+
+	val = (u8) (end);
+	err = ec_write(MSI_EC_THRESHOLD_ADDRESS, val);
+
+	return err;
 }
 
 static int __init msi_laptop_init(void)
@@ -41,14 +58,16 @@ static int __init msi_laptop_init(void)
 	/*
 	 * I'm going to use this guid because is the only
 	 * one I have to check if this is an msi laptop
+	 *
+	 * It needs a better suitable guid, because this
+	 * probably will only work with 11th gen intel laptops
 	 */
 	if (wmi_has_guid(MSIWMI_WIND_EVENT_GUID)) {
-		printk(KERN_INFO "Has MSIWMI_WIND_EVENT_GUID!\n");
+		int val = charge_threshold_get();
+		printk(KERN_INFO "Read ec, Value: %d\n", val);
 
-		printk(KERN_INFO "Read ec charge threshold\n");
-		if (!charge_threshold_get()) {
-			printk(KERN_INFO "Error trying to read from ec\n");
-		}
+		//int err = charge_threshold_set(1);
+		//printk(KERN_INFO "Write ec, Error: %d\n", err);
 	}
 
 	return 0;
