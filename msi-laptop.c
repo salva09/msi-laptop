@@ -24,7 +24,7 @@ static int charge_threshold_get(void)
 	int result;
 
 	// rdata always returns 0, the command is probably wrong
-	result = ec_transaction(0xef, NULL, 0, &rdata, 1);
+	result = ec_transaction(MSI_EC_THRESHOLD_COMMAND, NULL, 0, &rdata, 1);
 	if (!result)
 		return result;
 
