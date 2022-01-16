@@ -17,6 +17,7 @@ MODULE_VERSION("0.01");
 
 static int charge_threshold_get(void);
 static int charge_threshold_set(int end);
+static void charge_threshold_show(void);
 
 static int charge_threshold_get(void)
 {
@@ -51,6 +52,15 @@ static int charge_threshold_set(int end)
 	return err;
 }
 
+static void charge_threshold_show(void)
+{
+	int val;
+
+	val = charge_threshold_get();
+
+	printk(KERN_INFO "Charge threshold value: %d\n", val);
+}
+
 static int __init msi_laptop_init(void)
 {
 	printk(KERN_INFO "Loading module\n");
@@ -63,8 +73,7 @@ static int __init msi_laptop_init(void)
 	 * probably will only work with 11th gen intel laptops
 	 */
 	if (wmi_has_guid(MSIWMI_WIND_EVENT_GUID)) {
-		int val = charge_threshold_get();
-		printk(KERN_INFO "Read ec, Value: %d\n", val);
+		charge_threshold_show();
 
 		//int err = charge_threshold_set(1);
 		//printk(KERN_INFO "Write ec, Error: %d\n", err);
