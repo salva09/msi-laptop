@@ -35,8 +35,8 @@ static int charge_threshold_get(void)
 /*
  * Accepeted values are
  * 0 - 60%
- * 1 - 80%
- * 2 - 100%
+ * ? - 80%
+ * 1 - 100%
  */
 static int charge_threshold_set(int end)
 {
