@@ -2,6 +2,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/acpi.h>
+#include <linux/wmi.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Salvador Hernández");
@@ -13,70 +14,30 @@ MODULE_VERSION("0.01");
 #define MSIWMI_MSI_EVENT_GUID "B6F3EEF2-3D2F-49DC-9DE3-85BCE18C62F2"
 #define MSIWMI_WIND_EVENT_GUID "5B3CC38A-40D9-7245-8AE6-1145B751BE3F"
 
+#define MSI_WMI_BATTERY_GUID "ABBC0F6E-8EA1-11D1-00A0-C90629100000"
+
 #define MSI_EC_THRESHOLD_ADDRESS 0xef
 
 static int charge_threshold_get(void);
 static int charge_threshold_set(int end);
 static void charge_threshold_show(void);
 
-static int charge_threshold_get(void)
+static void test_wmi_method(void)
 {
-	int err;
-	u8 val;
-
-	err = ec_read(MSI_EC_THRESHOLD_ADDRESS, &val);
-
-	if (!err)
-		return (int) val;
-
-	return err;
-}
-
-/*
- * Accepeted values are
- * 0 - 60%
- * ? - 80%
- * 1 - 100%
- */
-static int charge_threshold_set(int end)
-{
-	int err;
-	u8 val;
-
-	if (end < 0 || end > 2)
-		return -EINVAL;
-
-	val = (u8) (end);
-	err = ec_write(MSI_EC_THRESHOLD_ADDRESS, val);
-
-	return err;
-}
-
-static void charge_threshold_show(void)
-{
-	int val;
-
-	val = charge_threshold_get();
-
-	printk(KERN_INFO "Charge threshold value: %d\n", val);
+  struct acpi_buffer input, output;
+  acpi_status status;
+  u8 instance = 0;
+  u32 method_id = 1;
+  
+  status = wmi_evaluate_method(MSI_WMI_BATTERY_GUID, instance, method_id, &input, &output);
 }
 
 static int __init msi_laptop_init(void)
 {
 	printk(KERN_INFO "Loading module\n");
 
-	/*
-	 * I'm going to use this guid because is the only
-	 * one I have to check if this is an msi laptop
-	 *
-	 * It needs a better suitable guid, because this
-	 * probably will only work with 11th gen intel laptops
-	 */
-	if (wmi_has_guid(MSIWMI_WIND_EVENT_GUID)) {
-		charge_threshold_show();
-
-		//int err = charge_threshold_set(1);
-		//printk(KERN_INFO "Write ec, Error: %d\n", err);
+	if (wmi_has_guid(MSI_WMI_BATTERY_GUID)) {
+		test_wmi_method();
 	}
 
 	return 0;
